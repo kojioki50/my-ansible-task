@@ -1,0 +1,15 @@
+---
+- name: Install the prerequisites
+  yum:
+    name: yum-utils
+    state: latest
+
+- name: Create Nginx repo
+  template:
+    src: roles/nginx/templates/nginx.repo.j2
+    dest: /etc/yum.repos.d/nginx.repo
+
+- name: Install Nginx
+  become: yes
+  yum:
+    name: nginx
