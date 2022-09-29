@@ -1,0 +1,39 @@
+version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@3.1
+  ansible-playbook: orbss/ansible-playbook@0.0.5
+jobs:
+  execute-cloudformation:
+    executor: aws-cli/default
+    steps:
+      - checkout
+      - aws-cli/setup:
+         aws-access-key-id: AWS_ACCESS_KEY_ID
+         aws-region: AWS_DEFAULT_REGION
+         aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+      - run:
+          name: deploy Cloudformation
+          command: |
+            set -x
+            aws cloudformation deploy --stack-name sampleStackFromCircleCI --template-file cloudformation/sampleStack.yml
+  execute-ansible:
+    executor: ansible-playbook/default
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints:
+            - "e3:41:c2:c8:53:99:bb:f3:c7:f8:e7:75:d8:d8:9b:01"
+      - ansible-playbook/install:
+          version: 2.10.3
+      - ansible-playbook/playbook:
+          playbook: ansible/playbook.yml
+          playbook-options: "-u ec2-user -i ansible/inventory --private-key ~/.ssh/EC2key"
+          # private-key: ANSIBLE_SSH_KEY
+
+workflows:
+  sample-ansible:
+    jobs:
+      - execute-cloudformation
+      - execute-ansible:
+         requires:
+           - "execute-cloudformation"
